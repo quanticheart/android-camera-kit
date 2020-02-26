@@ -1,4 +1,4 @@
-package com.quanticheart.fotoapparat
+package com.quanticheart.camerakit
 
 import org.junit.Test
 

@@ -38,22 +38,18 @@
 package com.quanticheart.camera
 
 import androidx.appcompat.app.AppCompatActivity
-import com.quanticheart.camera.file.addImageToGallery
+import com.camerakit.CameraKit
+import com.camerakit.CameraKitView
+import com.camerakit.CameraKitView.*
+import com.camerakit.type.CameraFlash
 import com.quanticheart.camera.file.getExternalFile
-import io.fotoapparat.Fotoapparat
-import io.fotoapparat.configuration.CameraConfiguration
-import io.fotoapparat.log.fileLogger
-import io.fotoapparat.log.logcat
-import io.fotoapparat.log.loggers
-import io.fotoapparat.parameter.ScaleType
-import io.fotoapparat.result.BitmapPhoto
-import io.fotoapparat.selector.*
-import io.fotoapparat.view.CameraView
-import io.fotoapparat.view.FocusView
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+
 
 abstract class BaseCameraActivity : AppCompatActivity() {
-    private lateinit var fotoapparat: Fotoapparat
+    private lateinit var cameraKitView: CameraKitView
 
     /**
      * Default configurations
@@ -64,77 +60,64 @@ abstract class BaseCameraActivity : AppCompatActivity() {
         FlashState.OFF
 
     protected fun startCamera(
-        cameraView: CameraView,
-        focusView: FocusView? = null,
+        cameraView: CameraKitView,
         startCameraState: CameraState = cameraState,
         startFlashState: FlashState = flashState
     ) {
         cameraState = startCameraState
         flashState = startFlashState
-        fotoapparat = Fotoapparat(
-            context = this,
-            view = cameraView,                   // view which will draw the camera preview
-            scaleType = ScaleType.CenterCrop,    // (optional) we want the preview to fill the view
-            lensPosition = if (cameraState == CameraState.BACK) back() else front(),               // (optional) we want back camera
-            logger = loggers(                    // (optional) we want to log camera events in 2 places at once
-                logcat(),                   // ... in logcat
-                fileLogger(this)            // ... and to file
-            ),
-            cameraErrorCallback = { error ->
-                println("Recorder errors: $error")
-            },  // (optional) log fatal errors
-            focusView = focusView
-        )
+        getConfig(cameraView)
+        cameraKitView.requestPermissions(this)
     }
 
-    private fun getConfig(): CameraConfiguration = CameraConfiguration(
-        pictureResolution = highestResolution(), // (optional) we want to have the highest possible photo resolution
-        previewResolution = highestResolution(), // (optional) we want to have the highest possible preview resolution
-        previewFpsRange = highestFps(),          // (optional) we want to have the best frame rate
-        focusMode = firstAvailable(              // (optional) use the first focus mode which is supported by device
-            continuousFocusPicture(),
-            autoFocus(),                       // if continuous focus is not available on device, auto focus will be used
-            fixed()                            // if even auto focus is not available - fixed focus mode will be used
-        ),
-        flashMode = if (flashState == FlashState.TORCH) torch() else off(),
-        antiBandingMode = firstAvailable(       // (optional) similar to how it is done for focus mode & flash, now for anti banding
-            auto(),
-            hz50(),
-            hz60(),
-            none()
-        ),
-        jpegQuality = manualJpegQuality(90),     // (optional) select a jpeg quality of 90 (out of 0-100) values
-        sensorSensitivity = lowestSensorSensitivity(), // (optional) we want to have the lowest sensor sensitivity (ISO)
-        frameProcessor = { frame ->
+    private fun getConfig(cameraView: CameraKitView) {
+        cameraKitView = cameraView
+//        cameraKitView.apply {
+//            flash = if (flashState == FlashState.TORCH) CameraKit.FLASH_ON else CameraKit.FLASH_OFF
+//            facing =
+//                if (cameraState == CameraState.BACK) CameraKit.FACING_BACK else CameraKit.FACING_FRONT
+//            sensorPreset = CameraKit.SENSOR_PRESET_NONE
+//            previewEffect = CameraKit.PREVIEW_EFFECT_NONE
+//            permissions = CameraKitView.PERMISSION_CAMERA
+//            focus = CameraKit.FOCUS_AUTO
+////            permissions = CameraKitView.PERMISSION_STORAGE
+//        }
 
-        }            // (optional) receives each frame from preview stream
+        cameraKitView.gestureListener = object : GestureListener {
+            override fun onTap(cameraKitView: CameraKitView, v: Float, v1: Float) {}
+            override fun onLongTap(cameraKitView: CameraKitView, v: Float, v1: Float) {}
+            override fun onDoubleTap(cameraKitView: CameraKitView, v: Float, v1: Float) {}
+            override fun onPinch(cameraKitView: CameraKitView, v: Float, v1: Float, v2: Float) {}
+        }
 
-        /**
-         * Flash modes
-         */
-//                flashMode = firstAvailable (              // (optional) similar to how it is done for focus mode, this time for flash
-//                autoRedEye(),
-//                autoFlash(),
-//                torch(),
-//                off()),
-    )
+        cameraKitView.cameraListener = object : CameraListener {
+            override fun onOpened() {}
+            override fun onClosed() {}
+        }
+
+        cameraKitView.previewListener = object : PreviewListener {
+            override fun onStart() {}
+            override fun onStop() {}
+        }
+
+        cameraKitView.errorListener = ErrorListener { cameraKitView, e -> }
+    }
 
     /**
      * Take picture
      */
-
-    protected fun takePicture(file: File? = null, takeBitmap: ((BitmapPhoto?) -> Unit)? = null) {
-        val photoResult = fotoapparat.takePicture()
-        // save to file
+    protected fun takePicture(file: File? = null, takeBitmap: ((File?) -> Unit)? = null) {
         val fileFinal = file ?: getExternalFile()
-        photoResult.saveToFile(fileFinal)
-
-        // obtain Bitmap
-        photoResult.toBitmap()
-            .whenAvailable { bitmapPhoto ->
-                addImageToGallery(fileFinal)
-                takeBitmap?.invoke(bitmapPhoto)
+        cameraKitView.captureImage { cameraKitView, capturedImage ->
+            try {
+                val outputStream = FileOutputStream(fileFinal.path)
+                outputStream.write(capturedImage)
+                outputStream.close()
+                takeBitmap?.let { it(fileFinal) }
+            } catch (e: IOException) {
+                e.printStackTrace()
             }
+        }
     }
 
     /**
@@ -143,32 +126,64 @@ abstract class BaseCameraActivity : AppCompatActivity() {
 
     protected fun changeFlashStatus() {
         flashState = if (flashState == FlashState.OFF) FlashState.TORCH else FlashState.OFF
-        fotoapparat.updateConfiguration(
-            getConfig().copy(
-                flashMode = if (flashState == FlashState.TORCH) torch() else off()
-            )
-        )
+        cameraKitView.flash =
+            if (flashState == FlashState.TORCH) CameraKit.FLASH_ON else CameraKit.FLASH_OFF
     }
 
     protected fun changeCameraStatus() {
         cameraState = if (cameraState == CameraState.BACK) CameraState.FRONT else CameraState.BACK
-        fotoapparat.switchTo(
-            if (cameraState == CameraState.BACK) back() else front(),
-            getConfig()
-        )
+        cameraKitView.facing =
+            if (cameraState == CameraState.BACK) CameraKit.FACING_BACK else CameraKit.FACING_FRONT
     }
+
+    protected fun setFlashAuto() {
+        flashState = FlashState.OFF
+        cameraKitView.flash = CameraKit.FLASH_AUTO
+    }
+
+    protected fun setFlashOn() {
+        flashState = FlashState.TORCH
+        cameraKitView.flash = CameraKit.FLASH_TORCH
+    }
+
+    protected fun setFocusAuto() {
+        cameraKitView.focus = CameraKit.FOCUS_AUTO
+    }
+
+    protected fun setFocusContinuous() {
+        cameraKitView.focus = CameraKit.FOCUS_CONTINUOUS
+    }
+
+    protected fun setFocusOff() {
+        cameraKitView.focus = CameraKit.FOCUS_OFF
+    }
+
+    protected fun toggleFacing() {
+        cameraKitView.toggleFacing()
+    }
+
+    protected fun hasFlash(): Boolean = cameraKitView.hasFlash()
+    protected fun getSupportedFlashTypes(): Array<CameraFlash> = cameraKitView.supportedFlashTypes
+
 
     protected fun setZoon(zoom: Float) {
-        fotoapparat.setZoom(zoom)
+        cameraKitView.zoomFactor = zoom
     }
 
-    protected fun callFocus() {
-        fotoapparat.focus()
+    protected fun setAspectRatio(aspectRatio: Float) {
+        cameraKitView.aspectRatio = aspectRatio
     }
 
-    protected fun callAutoFocus() {
-        fotoapparat.autoFocus()
+    protected fun setImageMegaPixels(megaPixels: Float) {
+        cameraKitView.imageMegaPixels = megaPixels
     }
+
+//    protected fun setJpegQuality(quality: Float) {
+//        this function have only in xml
+//        app:camera_imageJpegQuality="100"
+//        Possible values:
+//        int: [0,100]
+//    }
 
     /**
      * Enus for states
@@ -186,21 +201,32 @@ abstract class BaseCameraActivity : AppCompatActivity() {
      * init camera
      */
 
-    private fun initCamera() {
-        fotoapparat.start()
-        fotoapparat.updateConfiguration(getConfig())
-    }
-
-    /**
-     * init camera
-     */
     override fun onStart() {
         super.onStart()
-        initCamera()
+        cameraKitView.onStart()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        cameraKitView.onResume()
+    }
+
+    override fun onPause() {
+        cameraKitView.onPause()
+        super.onPause()
     }
 
     override fun onStop() {
+        cameraKitView.onStop()
         super.onStop()
-        fotoapparat.stop()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        cameraKitView.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 }

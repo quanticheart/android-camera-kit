@@ -35,19 +35,19 @@
  *
  */
 
-package com.quanticheart.fotoapparat
+package com.quanticheart.camerakit
 
 import android.os.Bundle
 import com.quanticheart.camera.BaseCameraActivity
+import com.quanticheart.camera.extentions.setSeekBarListener
 import com.quanticheart.camera.extentions.setThumb
-import com.quanticheart.camera.extentions.setZoomListener
 import kotlinx.android.synthetic.main.activity_simple.*
 
-class SimpleActivity : BaseCameraActivity() {
+class CameraActivity : BaseCameraActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_simple)
-        startCamera(ca1, focus)
+        startCamera(camera)
         /**
          * init
          */
@@ -57,13 +57,26 @@ class SimpleActivity : BaseCameraActivity() {
     private fun initListeners() {
         btnTrade.setOnClickListener { changeCameraStatus() }
         btnFlash.setOnClickListener { changeFlashStatus() }
+
+        btnFlashOn.setOnClickListener { setFlashOn() }
+        btnFlashAuto.setOnClickListener { setFlashAuto() }
+
         btnAction.setOnClickListener {
             takePicture {
                 thunb.setThumb(it!!)
             }
         }
-        zoom.setZoomListener {
+
+        zoom.setSeekBarListener {
             setZoon(it)
+        }
+
+        aspect.setSeekBarListener {
+            setAspectRatio(it)
+        }
+
+        pixels.setSeekBarListener {
+            setImageMegaPixels(it)
         }
     }
 }

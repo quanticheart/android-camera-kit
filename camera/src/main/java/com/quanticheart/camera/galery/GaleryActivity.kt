@@ -39,7 +39,6 @@ package com.quanticheart.camera.galery
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.quanticheart.camera.GaleryAdapter
 import com.quanticheart.camera.R
 import com.quanticheart.camera.file.getAllImages
 import kotlinx.android.synthetic.main.galery_activity.*

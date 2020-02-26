@@ -44,22 +44,66 @@
     android:gravity="center"
     tools:context=".MainActivity">
 
-    <io.fotoapparat.view.CameraView
-        android:id="@+id/ca1"
+    <com.camerakit.CameraKitView
+        android:id="@+id/camera"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        android:keepScreenOn="true"
+        app:camera_imageJpegQuality="100"
+        app:camera_permissions="camera"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#aacccccc"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="@+id/tx1" />
 
-        <io.fotoapparat.view.FocusView
-            android:id="@+id/focus"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+    <TextView
+        android:id="@+id/tx1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingTop="15dp"
+        android:text="Mega Pixels"
+        app:layout_constraintBottom_toTopOf="@+id/pixels"
+        app:layout_constraintLeft_toLeftOf="@+id/pixels" />
 
-    </io.fotoapparat.view.CameraView>
+    <SeekBar
+        android:id="@+id/pixels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="30dp"
+        app:layout_constraintBottom_toTopOf="@+id/tx2" />
 
+    <TextView
+        android:id="@+id/tx2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Aspect Ratio"
+        app:layout_constraintBottom_toTopOf="@+id/aspect"
+        app:layout_constraintLeft_toLeftOf="@+id/aspect" />
+
+    <SeekBar
+        android:id="@+id/aspect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="30dp"
+        app:layout_constraintBottom_toTopOf="@+id/tx3" />
+
+    <TextView
+        android:id="@+id/tx3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Zoom"
+        app:layout_constraintBottom_toTopOf="@+id/zoom"
+        app:layout_constraintLeft_toLeftOf="@+id/zoom" />
 
     <SeekBar
         android:id="@+id/zoom"
@@ -69,22 +113,35 @@
         app:layout_constraintBottom_toTopOf="@+id/btnAction" />
 
     <ImageView
+        android:id="@+id/btnFlashAuto"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginBottom="15dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_flash_auto"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/btnTrade" />
+
+    <ImageView
         android:id="@+id/btnTrade"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginRight="15dp"
         android:layout_marginBottom="15dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_loop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHorizontal_chainStyle="packed"
-        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintLeft_toRightOf="@+id/btnFlashAuto"
         app:layout_constraintRight_toLeftOf="@+id/btnAction" />
 
     <ImageView
         android:id="@+id/btnAction"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginBottom="15dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_camera"
@@ -95,13 +152,25 @@
 
     <ImageView
         android:id="@+id/btnFlash"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginLeft="15dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_flash"
         app:layout_constraintBottom_toBottomOf="@+id/btnAction"
         app:layout_constraintLeft_toRightOf="@+id/btnAction"
+        app:layout_constraintRight_toLeftOf="@+id/btnFlashOn"
+        app:layout_constraintTop_toTopOf="@+id/btnAction" />
+
+    <ImageView
+        android:id="@+id/btnFlashOn"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="15dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_wb"
+        app:layout_constraintBottom_toBottomOf="@+id/btnAction"
+        app:layout_constraintLeft_toRightOf="@+id/btnFlash"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="@+id/btnAction" />
 
@@ -113,5 +182,6 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

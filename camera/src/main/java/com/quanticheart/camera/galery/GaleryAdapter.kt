@@ -31,35 +31,60 @@
  *  *        |/_/         \===/
  *  *                       =
  *  *
- *  * Copyright(c) Developed by John Alves at 2020/2/16 at 3:53:34 for quantic heart studios
+ *  * Copyright(c) Developed by John Alves at 2020/2/24 at 1:13:37 for quantic heart studios
  *
  */
 
-package com.quanticheart.camera.extentions
+package com.quanticheart.camera.galery
 
-import android.graphics.BitmapFactory
-import android.util.Log
-import android.widget.ImageView
-import android.widget.SeekBar
-import java.io.File
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.quanticheart.camera.R
+import com.quanticheart.camera.file.ImageDataModel
+import kotlinx.android.synthetic.main.galery_item.view.*
 
-fun SeekBar.setSeekBarListener(zoom: (Float) -> Unit) {
-    setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-        override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
-            Log.w("INT", p1.toString())
-            zoom(p1.toFloat())
+class GaleryAdapter(private val recyclerView: RecyclerView) :
+    RecyclerView.Adapter<GaleryAdapter.GaleryViewHolder>() {
+
+    init {
+        recyclerView.apply {
+            layoutManager = GridLayoutManager(recyclerView.context, 3)
+            adapter = this@GaleryAdapter
         }
+    }
 
-        override fun onStartTrackingTouch(p0: SeekBar?) {
+    private val database = ArrayList<ImageDataModel>()
+
+    fun addData(dataList: List<ImageDataModel>) {
+        if (dataList.isNotEmpty()) {
+            database.clear()
+            database.addAll(dataList)
+            notifyDataSetChanged()
         }
+    }
 
-        override fun onStopTrackingTouch(p0: SeekBar?) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GaleryViewHolder =
+        GaleryViewHolder(
+            LayoutInflater.from(recyclerView.context).inflate(
+                R.layout.galery_item,
+                parent,
+                false
+            )
+        )
+
+    override fun getItemCount(): Int = database.size
+
+    override fun onBindViewHolder(holder: GaleryViewHolder, position: Int) {
+        holder.bind(database[position])
+    }
+
+    class GaleryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        fun bind(data: ImageDataModel) {
+            Glide.with(itemView.context).load(data.path).into(itemView.img)
         }
-    })
-}
-
-fun ImageView.setThumb(file: File) {
-    val filePath: String = file.path
-    val bitmap = BitmapFactory.decodeFile(filePath)
-    setImageBitmap(bitmap)
+    }
 }
